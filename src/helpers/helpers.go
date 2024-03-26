@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
+	"github.com/theritikchoure/logx"
 )
 
 var app *config.AppConfig
@@ -26,6 +27,8 @@ func ClientError(w http.ResponseWriter, status int, message string) {
 
 func ServerError(w http.ResponseWriter, err error) {
 	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+	logx.ColoringEnabled = true
+	logx.Log(err.Error(), logx.FGRED, logx.BGBLACK)
 	app.ErrorLog.Println(trace)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }

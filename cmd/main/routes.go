@@ -14,6 +14,7 @@ func routes() http.Handler {
 	mux.Use(middleware.Logger)
 
 	mux.Get("/health", handlers.Repo.Health)
+	mux.Post("/reservation", handlers.Repo.PostReservation)
 
 	return mux;
 }
