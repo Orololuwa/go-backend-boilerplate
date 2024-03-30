@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -35,19 +34,14 @@ func NewHandlers(r *Repository){
 }
 
 type jsonResponse struct {
-	Status int `json:"status"`
 	Message string `json:"message"`
-	Data string `json:"data"`
+	Data interface{} `json:"data"`
 }
 
 func (m *Repository) Health(w http.ResponseWriter, r *http.Request){
-	isHealthOk := m.DB.GetHealth()
-	log.Println(isHealthOk)
-
 	resp := jsonResponse{
-		Status: http.StatusOK,
 		Message: "App Healthy",
-		Data: "OK!",
+		Data: nil,
 	}
 
 	out, err := json.MarshalIndent(resp, "", "     ")
@@ -116,7 +110,6 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		RoomID: roomId,
 	}
 
-	log.Println(reservation)
 
 	newReservationId, err := m.DB.InsertReservation(reservation)
 	if err != nil {
@@ -138,7 +131,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]any{"message": "Request received successfully"}
+	response := map[string]any{"message": "Request received successfully", "data": nil}
     jsonResponse, err := json.Marshal(response)
     if err != nil {
         http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
