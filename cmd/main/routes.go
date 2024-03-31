@@ -15,6 +15,7 @@ func routes() http.Handler {
 
 	mux.Get("/health", handlers.Repo.Health)
 	mux.Post("/reservation", handlers.Repo.PostReservation)
+	mux.Post("/search-availability", handlers.Repo.PostAvailability)
 
 	return mux;
 }

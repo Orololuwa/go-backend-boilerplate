@@ -141,3 +141,55 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     w.Write(jsonResponse)
 }
+
+type PostAvailabilityBody struct {
+	StartDate string `json:"startDate"`
+	EndDate string `json:"endDate"`
+}
+
+func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var body PostAvailabilityBody
+	err := json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	start := body.StartDate
+	end := body.EndDate
+
+	layout := "2006-01-02"
+
+	startDate, err := time.Parse(layout, start)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	endDate, err := time.Parse(layout, end)
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	rooms, err := m.DB.SearchAvailabilityForAllRooms(startDate, endDate)
+	if (err != nil){
+		helpers.ServerError(w, err)
+		return
+	}
+
+	response := map[string]interface{}{"message": "rooms retrieved successfully", "data": rooms}
+    jsonResponse, err := json.Marshal(response)
+    if err != nil {
+        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusFound)
+    w.Write(jsonResponse)
+}
