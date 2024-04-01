@@ -43,3 +43,15 @@ func ServerError(w http.ResponseWriter, err error) {
 	app.ErrorLog.Println(trace)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
+
+func ClientResponseWriter(w http.ResponseWriter, data interface{}, status int, message string){
+	response := map[string]interface{}{"message": message, "data": data}
+    jsonResponse, err := json.Marshal(response)
+    if err != nil {
+        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    w.Write(jsonResponse)
+}

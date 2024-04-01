@@ -132,15 +132,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]any{"message": "Request received successfully", "data": nil}
-    jsonResponse, err := json.Marshal(response)
-    if err != nil {
-        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusOK)
-    w.Write(jsonResponse)
+	helpers.ClientResponseWriter(w, nil, http.StatusCreated, "reservation booked successfully")
 }
 
 type PostAvailabilityBody struct {
@@ -184,25 +176,10 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{"message": "rooms retrieved successfully", "data": rooms}
-    jsonResponse, err := json.Marshal(response)
-    if err != nil {
-        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusFound)
-    w.Write(jsonResponse)
+	helpers.ClientResponseWriter(w, rooms, http.StatusFound, "rooms retrieved successfully")
 }
 
 func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.Request){
-	// var start_date, end_date, id string
-	// start_date = r.URL.Query().Get("start_date")
-	// end_date = r.URL.Query().Get("end_date")
-	// id = r.URL.Query().Get("id")
-
-	// log.Println(start_date, end_date, id)
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -244,15 +221,8 @@ func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	response := map[string]interface{}{"message": "room retrieved successfully", "data": isRoomAvailable}
-    jsonResponse, err := json.Marshal(response)
-    if err != nil {
-        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusFound)
-    w.Write(jsonResponse)
+	helpers.ClientResponseWriter(w, isRoomAvailable, http.StatusFound, "room retrieved successfully")
+
 }
 
 func (m *Repository) GetRoomById(w http.ResponseWriter, r *http.Request){
@@ -268,15 +238,7 @@ func (m *Repository) GetRoomById(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	response := map[string]interface{}{"message": "room retrieved successfully", "data": room}
-    jsonResponse, err := json.Marshal(response)
-    if err != nil {
-        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusFound)
-    w.Write(jsonResponse)
+	helpers.ClientResponseWriter(w, room, http.StatusOK, "room retrieved successfully")
 }
 
 func (m *Repository) GetAllRooms(w http.ResponseWriter, r *http.Request){
@@ -302,14 +264,6 @@ func (m *Repository) GetAllRooms(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	response := map[string]interface{}{"message": "room retrieved successfully", "data": rooms}
-    jsonResponse, err := json.Marshal(response)
-    if err != nil {
-        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
-        return
-    }
-    w.Header().Set("Content-Type", "application/json")
-    w.WriteHeader(http.StatusFound)
-    w.Write(jsonResponse)
+	helpers.ClientResponseWriter(w, rooms, http.StatusOK, "rooms retrieved successfully")
 }
 
