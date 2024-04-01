@@ -15,10 +15,10 @@ type User struct {
 }
 
 type Room struct {
-	ID int
-	RoomName string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID int `json:"id"`
+	RoomName string `json:"roomName"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 
 }
 
