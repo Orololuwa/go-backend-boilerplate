@@ -2,6 +2,7 @@ package dbrepo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/models"
@@ -126,4 +127,81 @@ func (m *postgresDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]
 
 
 	return rooms, nil
+}
+
+func (m *postgresDBRepo) GetRoomById(id int) (models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var room models.Room
+
+	query := `
+		select id, room_name, created_at, updated_at from rooms where id = $1
+	`
+
+	row := m.DB.QueryRowContext(ctx, query, id)
+	err := row.Scan(&room.ID, &room.RoomName, &room.CreatedAt, &room.UpdatedAt)
+
+	if err != nil {
+		return room, err
+	}
+
+	return room, nil
+}
+
+func (m *postgresDBRepo) GetAllRooms(id int, room_name string, created_at string, updated_at string) ([]models.Room, error){
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rooms = make([]models.Room, 0)
+
+	query := `
+		select 
+			id, room_name, created_at, updated_at 
+		from 
+			rooms
+		where
+			1=1
+	`
+	args := []interface{}{}
+
+	if id != 0 {
+		query += fmt.Sprintf(" AND id = $%d", len(args)+1)
+		args = append(args, id)
+	}
+
+	if room_name != "" {
+		query += fmt.Sprintf(" AND room_name = $%d", len(args)+1)
+		args = append(args, room_name)
+	}
+
+	if created_at != "" {
+		query += fmt.Sprintf(" AND created_at = $%d", len(args)+1)
+		args = append(args, created_at)
+	}
+
+	if updated_at != "" {
+		query += fmt.Sprintf(" AND updated_at = $%d", len(args)+1)
+		args = append(args, updated_at)
+	}
+
+	rows, err := m.DB.QueryContext(ctx, query, args...)
+	if err != nil {
+        return rooms, err
+    }
+
+	for rows.Next(){
+		var room models.Room
+		err := rows.Scan(&room.ID, &room.RoomName, &room.CreatedAt, &room.UpdatedAt)
+		if err != nil {
+			return rooms, err
+		}
+		rooms = append(rooms, room)
+	}
+
+	if err := rows.Err(); err != nil {
+		return rooms, err
+	}
+
+	return rooms, nil	
 }

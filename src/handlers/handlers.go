@@ -12,6 +12,7 @@ import (
 	"github.com/Orololuwa/go-backend-boilerplate/src/models"
 	"github.com/Orololuwa/go-backend-boilerplate/src/repository"
 	dbrepo "github.com/Orololuwa/go-backend-boilerplate/src/repository/db-repo"
+	"github.com/go-chi/chi/v5"
 )
 
 type Repository struct {
@@ -156,7 +157,7 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 	var body PostAvailabilityBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
 		return
 	}
 
@@ -193,3 +194,122 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusFound)
     w.Write(jsonResponse)
 }
+
+func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.Request){
+	// var start_date, end_date, id string
+	// start_date = r.URL.Query().Get("start_date")
+	// end_date = r.URL.Query().Get("end_date")
+	// id = r.URL.Query().Get("id")
+
+	// log.Println(start_date, end_date, id)
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	var body PostAvailabilityBody
+	err = json.NewDecoder(r.Body).Decode(&body)
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
+		return
+	}
+
+	start := body.StartDate
+	end := body.EndDate
+
+	layout := "2006-01-02"
+
+	startDate, err := time.Parse(layout, start)
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
+		return
+	}
+
+	endDate, err := time.Parse(layout, end)
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
+		return
+	}
+
+	isRoomAvailable, err := m.DB.SearchAvailabilityForDatesByRoomId(startDate, endDate, id)
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
+		return
+	}
+
+	response := map[string]interface{}{"message": "room retrieved successfully", "data": isRoomAvailable}
+    jsonResponse, err := json.Marshal(response)
+    if err != nil {
+        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusFound)
+    w.Write(jsonResponse)
+}
+
+func (m *Repository) GetRoomById(w http.ResponseWriter, r *http.Request){
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		helpers.ServerError(w, err)
+		return
+	}
+
+	room, err := m.DB.GetRoomById(id)
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusNotFound, "room not found")
+		return
+	}
+
+	response := map[string]interface{}{"message": "room retrieved successfully", "data": room}
+    jsonResponse, err := json.Marshal(response)
+    if err != nil {
+        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusFound)
+    w.Write(jsonResponse)
+}
+
+func (m *Repository) GetAllRooms(w http.ResponseWriter, r *http.Request){
+	var room_name string
+	var id int
+	// start_date = r.URL.Query().Get("start_date")
+
+	room_name = r.URL.Query().Get("room_name")
+
+	if r.URL.Query().Has("id"){
+		paramId, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil {
+			helpers.ClientError(w, err, http.StatusNotFound, "")
+			return
+		}
+		id = paramId
+	}
+
+
+	rooms, err := m.DB.GetAllRooms(id, room_name, "", "")
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusNotFound, "")
+		return
+	}
+
+	response := map[string]interface{}{"message": "room retrieved successfully", "data": rooms}
+    jsonResponse, err := json.Marshal(response)
+    if err != nil {
+        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(http.StatusFound)
+    w.Write(jsonResponse)
+}
+

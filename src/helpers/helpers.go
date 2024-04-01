@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -15,14 +16,24 @@ func NewHelper(a *config.AppConfig){
 	app = a
 }
 
-func ClientError(w http.ResponseWriter, status int, message string) {
+func ClientError(w http.ResponseWriter, err error, status int,  message string) {
 	errorMessage := message
 	if errorMessage == "" {
-		errorMessage = "Client error with status of "
+		errorMessage = err.Error()
 	}
 
-	app.InfoLog.Println(errorMessage, status)
-	http.Error(w, http.StatusText(status), status)
+	logx.ColoringEnabled = true
+	logx.Log(err.Error(), logx.FGRED, logx.BGBLACK)
+
+	response := map[string]interface{}{"message": errorMessage, "error": err}
+    errorResponse, errJson := json.Marshal(response)
+    if errJson != nil {
+        http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+        return
+    }
+    w.Header().Set("Content-Type", "application/json")
+    w.WriteHeader(status)
+    w.Write(errorResponse)
 }
 
 func ServerError(w http.ResponseWriter, err error) {
