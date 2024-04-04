@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
@@ -27,6 +28,14 @@ func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
 		DB: dbrepo.NewPostgresDBRepo(db.SQL),
+	}
+}
+
+// NewRepo function initializes the Repo
+func NewTestRepo(a *config.AppConfig) *Repository {
+	return &Repository{
+		App: a,
+		DB: dbrepo.NewTestingDBRepo(),
 	}
 }
 
@@ -74,7 +83,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	var body ReservationBody
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -85,19 +94,19 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	startDate, err := time.Parse(layout, sd)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	endDate, err := time.Parse(layout, ed)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
 	roomId, err := strconv.Atoi(body.RoomId)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -114,7 +123,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	newReservationId, err := m.DB.InsertReservation(reservation)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -128,7 +137,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	err = m.DB.InsertRoomRestriction(restriction)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
@@ -140,7 +149,7 @@ type PostAvailabilityBody struct {
 	EndDate string `json:"endDate"`
 }
 
-func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
+func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -160,19 +169,19 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 
 	startDate, err := time.Parse(layout, start)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
 		return
 	}
 
 	endDate, err := time.Parse(layout, end)
 	if err != nil {
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusBadRequest, "")
 		return
 	}
 
 	rooms, err := m.DB.SearchAvailabilityForAllRooms(startDate, endDate)
 	if (err != nil){
-		helpers.ServerError(w, err)
+		helpers.ClientError(w, err, http.StatusNotFound, "")
 		return
 	}
 
@@ -185,10 +194,21 @@ func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		helpers.ServerError(w, err)
+	var id int
+	var err error
+	if m.App.GoEnv == "test" {
+		exploded := strings.Split(r.RequestURI, "/")
+		id, err = strconv.Atoi(exploded[2])
+		if err != nil {
+			helpers.ClientError(w, err, http.StatusInternalServerError, "missing URL param")
 		return
+		}
+	}else{		
+		id, err = strconv.Atoi(chi.URLParam(r, "id"))
+		if err != nil {
+			helpers.ClientError(w, err, http.StatusInternalServerError, "")
+			return
+		}
 	}
 
 	var body PostAvailabilityBody
@@ -217,7 +237,7 @@ func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.R
 
 	isRoomAvailable, err := m.DB.SearchAvailabilityForDatesByRoomId(startDate, endDate, id)
 	if err != nil {
-		helpers.ClientError(w, err, http.StatusBadRequest, "")
+		helpers.ClientError(w, err, http.StatusNotFound, "")
 		return
 	}
 
@@ -226,10 +246,21 @@ func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.R
 }
 
 func (m *Repository) GetRoomById(w http.ResponseWriter, r *http.Request){
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		helpers.ServerError(w, err)
+	var id int
+	var err error
+	if m.App.GoEnv == "test" {
+		exploded := strings.Split(r.RequestURI, "/")
+		id, err = strconv.Atoi(exploded[2])
+		if err != nil {
+			helpers.ClientError(w, err, http.StatusInternalServerError, "missing URL param")
 		return
+		}
+	}else{		
+		id, err = strconv.Atoi(chi.URLParam(r, "id"))
+		if err != nil {
+			helpers.ClientError(w, err, http.StatusInternalServerError, "")
+			return
+		}
 	}
 
 	room, err := m.DB.GetRoomById(id)
@@ -244,7 +275,6 @@ func (m *Repository) GetRoomById(w http.ResponseWriter, r *http.Request){
 func (m *Repository) GetAllRooms(w http.ResponseWriter, r *http.Request){
 	var room_name string
 	var id int
-	// start_date = r.URL.Query().Get("start_date")
 
 	room_name = r.URL.Query().Get("room_name")
 

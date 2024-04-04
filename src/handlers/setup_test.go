@@ -4,18 +4,16 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"testing"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
-	"github.com/Orololuwa/go-backend-boilerplate/src/driver"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
 var testApp config.AppConfig
-var testDB *driver.DB
 
-
-func getRoutes() http.Handler {
+func TestMain (m *testing.M){
 	testApp.GoEnv = "test" //This should be gotten from the environment variables
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -24,23 +22,24 @@ func getRoutes() http.Handler {
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	testApp.ErrorLog = errorLog
 
-	// // Connecto to DB
-	// log.Println("Connecting to dabase")
-	// db, err := driver.ConnectSQL(fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=", dbHost, dbPort, dbName, dbUser))
-	// if err != nil {
-	// 	log.Fatal("Cannot conect to database: Dying!", err)
-	// }
-	// log.Println("Connected to database")
-	// // 
-
-	repo := NewRepo(&testApp, testDB)
+	repo := NewTestRepo(&testApp)
 	NewHandlers(repo)
 
+	os.Exit(m.Run())
+}
+
+
+func getRoutes() http.Handler {
 	mux := chi.NewRouter()
 
 	mux.Use(middleware.Logger)
 
 	mux.Get("/health", Repo.Health)
+	mux.Post("/reservation", Repo.PostReservation)
+	mux.Post("/search-availability", Repo.SearchAvailability)
+	mux.Post("/search-availability/{id}", Repo.SearchAvailabilityByRoomId)
+	mux.Get("/room", Repo.GetAllRooms)
+	mux.Get("/room/{id}", Repo.GetRoomById)
 
 	return mux;
 }
