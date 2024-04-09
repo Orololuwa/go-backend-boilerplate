@@ -9,6 +9,7 @@ import (
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
 	"github.com/Orololuwa/go-backend-boilerplate/src/driver"
 	"github.com/Orololuwa/go-backend-boilerplate/src/handlers"
+	"github.com/go-playground/validator/v10"
 )
 
 const portNumber = ":8085"
@@ -50,6 +51,9 @@ func run() (*driver.DB, error) {
 
 	errorLog = log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	app.ErrorLog = errorLog
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	app.Validate = validate
 
 	// Connecto to DB
 	log.Println("Connecting to dabase")

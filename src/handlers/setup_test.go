@@ -9,6 +9,7 @@ import (
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 )
 
 var testApp config.AppConfig
@@ -21,6 +22,9 @@ func TestMain (m *testing.M){
 
 	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	testApp.ErrorLog = errorLog
+
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	testApp.Validate = validate
 
 	repo := NewTestRepo(&testApp)
 	NewHandlers(repo)

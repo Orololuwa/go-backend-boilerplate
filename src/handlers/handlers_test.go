@@ -7,6 +7,9 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/Orololuwa/go-backend-boilerplate/src/dtos"
+	"github.com/Orololuwa/go-backend-boilerplate/src/middleware"
 )
 
 type postData struct {
@@ -105,6 +108,32 @@ func TestRepository_PostReservation(t *testing.T){
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Errorf("PostReservation handler returned wrong response code for missing body: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
+	}
+
+	// test for validator for invalid email
+	reqBody = []byte(`
+	{
+		"firstName": "John",
+		"lastName": "Doe",
+		"email": "johndoe",
+		"phone": "+234-000-000-0000",
+		"startDate": "invalid",
+		"endDate": "2024-04-30",
+		"roomId": "1"
+	}
+	`)
+
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
+	req.Header.Set("Content-Type", "application/json")
+
+	rr = httptest.NewRecorder()
+
+	handler = http.HandlerFunc(Repo.PostReservation)
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Errorf("PostReservation handler returned wrong response code for invalid email on validator: got %d, wanted %d", rr.Code, http.StatusBadRequest)
 	}
 
 	// test for invalid start date
@@ -240,21 +269,7 @@ func TestRepository_PostReservation(t *testing.T){
 
 func TestRepository_SearchAvailability(t *testing.T){
 	// Test to make sure that a post handler is being called
-	req, _ := http.NewRequest("PUT", "/search-availability", nil)
-	req.Header.Set("Content-Type", "application/json")
-
-	res := httptest.NewRecorder()
-
-	handler := http.HandlerFunc(Repo.SearchAvailability)
-
-	handler.ServeHTTP(res, req)
-
-	if res.Code != http.StatusMethodNotAllowed {
-		t.Errorf("SearchAvailability handler returned wrong response code for wrong http method: got %d, wanted %d", res.Code, http.StatusMethodNotAllowed)
-	}
-
-	// test for the right request body
-	reqBody := PostAvailabilityBody{
+	reqBody := dtos.PostAvailabilityBody{
 		StartDate: "2024-05-30",
 		EndDate: "2024-06-06",
 	}
@@ -265,14 +280,41 @@ func TestRepository_SearchAvailability(t *testing.T){
         return
     }
 
+	req, _ := http.NewRequest("PUT", "/search-availability", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := httptest.NewRecorder()
+
+	reqBodyRef := &dtos.PostAvailabilityBody{}
+	handlerChain := middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+
+	handlerChain.ServeHTTP(res, req)
+
+	if res.Code != http.StatusMethodNotAllowed {
+		t.Errorf("SearchAvailability handler returned wrong response code for wrong http method: got %d, wanted %d", res.Code, http.StatusMethodNotAllowed)
+	}
+
+	// test for the right request body
+	reqBody = dtos.PostAvailabilityBody{
+		StartDate: "2024-05-30",
+		EndDate: "2024-06-06",
+	}
+	
+	jsonData, err = json.Marshal(reqBody)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
+
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailability)
+	reqBodyRef = &dtos.PostAvailabilityBody{}
+	handlerChain = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
-	handler.ServeHTTP(res, req)
+	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusFound {
 		t.Errorf("SearchAvailability handler returned wrong response code: got %d, wanted %d", res.Code, http.StatusFound)
@@ -284,16 +326,31 @@ func TestRepository_SearchAvailability(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailability)
+	reqBodyRef = &dtos.PostAvailabilityBody{}
+	handlerChain = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
-	handler.ServeHTTP(res, req)
+	handlerChain.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Errorf("SearchAvailability handler returned wrong response code for missing request body: got %d, wanted %d", res.Code, http.StatusBadRequest)
+	}
+
+	// test for missing request body in context
+	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer([]byte(``)))
+	req.Header.Set("Content-Type", "application/json")
+
+	res = httptest.NewRecorder()
+
+	handlerChain = http.HandlerFunc(Repo.SearchAvailability)
+
+	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
 		t.Errorf("SearchAvailability handler returned wrong response code for missing request body: got %d, wanted %d", res.Code, http.StatusBadRequest)
 	}
 
 	// test for invalid startDate
-	reqBody = PostAvailabilityBody{
+	reqBody = dtos.PostAvailabilityBody{
 		StartDate: "invalid",
 		EndDate: "2024-06-06",
 	}
@@ -309,16 +366,17 @@ func TestRepository_SearchAvailability(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailability)
+	reqBodyRef = &dtos.PostAvailabilityBody{}
+	handlerChain = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
-	handler.ServeHTTP(res, req)
+	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
 		t.Errorf("SearchAvailability handler returned wrong response code for invalid startDate: got %d, wanted %d", res.Code, http.StatusBadRequest)
 	}
 
 	// test for invalid endDate
-	reqBody = PostAvailabilityBody{
+	reqBody = dtos.PostAvailabilityBody{
 		StartDate: "2024-05-30",
 		EndDate: "invalid",
 	}
@@ -334,16 +392,17 @@ func TestRepository_SearchAvailability(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailability)
+	reqBodyRef = &dtos.PostAvailabilityBody{}
+	handlerChain = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
-	handler.ServeHTTP(res, req)
+	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
 		t.Errorf("SearchAvailability handler returned wrong response code for invalid endDate: got %d, wanted %d", res.Code, http.StatusBadRequest)
 	}	
 	
 	// test for failed db search
-	reqBody = PostAvailabilityBody{
+	reqBody = dtos.PostAvailabilityBody{
 		StartDate: "1955-05-30",
 		EndDate: "2024-06-06",
 	}
@@ -359,9 +418,10 @@ func TestRepository_SearchAvailability(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailability)
+	reqBodyRef = &dtos.PostAvailabilityBody{}
+	handlerChain = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
-	handler.ServeHTTP(res, req)
+	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
 		t.Errorf("SearchAvailability handler returned wrong response code for failed db search: got %d, wanted %d", res.Code, http.StatusNotFound)
@@ -369,37 +429,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 }
 
 func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
-	// Test to make sure that a post handler is being called
-	req, _ := http.NewRequest("PUT", "/search-availability/1", nil)
-	req.Header.Set("Content-Type", "application/json")
-
-	res := httptest.NewRecorder()
-
-	handler := http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
-
-	handler.ServeHTTP(res, req)
-
-	if res.Code != http.StatusMethodNotAllowed {
-		t.Errorf("SearchAvailabilityByRoomId handler returned wrong response code for wrong http method: got %d, wanted %d", res.Code, http.StatusMethodNotAllowed)
-	}
-
-	// Test for invalid id in the path variable
-	req, _ = http.NewRequest("POST", "/search-availability/one", nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.RequestURI = "/search-availability/one"
-
-	res = httptest.NewRecorder()
-
-	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
-
-	handler.ServeHTTP(res, req)
-
-	if res.Code != http.StatusInternalServerError {
-		t.Errorf("SearchAvailabilityByRoomId handler returned wrong response code for invalid id in the url: got %d, wanted %d", res.Code, http.StatusInternalServerError)
-	}
-	
-	// test for the right request body
-	reqBody := PostAvailabilityBody{
+	reqBody := dtos.PostAvailabilityBody{
 		StartDate: "2024-05-30",
 		EndDate: "2024-06-06",
 	}
@@ -410,13 +440,43 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
         return
     }
 
+	// Test to make sure that a post handler is being called
+	req, _ := http.NewRequest("PUT", "/search-availability/1", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+
+	res := httptest.NewRecorder()
+
+	handler := middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusMethodNotAllowed {
+		t.Errorf("SearchAvailabilityByRoomId handler returned wrong response code for wrong http method: got %d, wanted %d", res.Code, http.StatusMethodNotAllowed)
+	}
+
+	// Test for invalid id in the path variable
+	req, _ = http.NewRequest("POST", "/search-availability/one", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.RequestURI = "/search-availability/one"
+
+	res = httptest.NewRecorder()
+
+	handler = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusInternalServerError {
+		t.Errorf("SearchAvailabilityByRoomId handler returned wrong response code for invalid id in the url: got %d, wanted %d", res.Code, http.StatusInternalServerError)
+	}
+	
+	// test for the right request body
 	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/1"
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
+	handler = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -431,7 +491,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
+	handler = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -439,8 +499,23 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 		t.Errorf("SearchAvailabilityByRoomId handler returned wrong response code for missing request body: got %d, wanted %d", res.Code, http.StatusBadRequest)
 	}
 
+	// test for missing request body data in the context
+	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer([]byte(``)))
+	req.Header.Set("Content-Type", "application/json")
+	req.RequestURI = "/search-availability/1"
+
+	res = httptest.NewRecorder()
+
+	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
+
+	handler.ServeHTTP(res, req)
+
+	if res.Code != http.StatusBadRequest {
+		t.Errorf("SearchAvailabilityByRoomId handler returned wrong response code for missing request body data in the request context: got %d, wanted %d", res.Code, http.StatusBadRequest)
+	}
+
 	// test for invalid startDate
-	reqBody = PostAvailabilityBody{
+	reqBody = dtos.PostAvailabilityBody{
 		StartDate: "invalid",
 		EndDate: "2024-06-06",
 	}
@@ -457,7 +532,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
+	handler = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -466,7 +541,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	}
 
 	// test for invalid endDate
-	reqBody = PostAvailabilityBody{
+	reqBody = dtos.PostAvailabilityBody{
 		StartDate: "2024-05-30",
 		EndDate: "invalid",
 	}
@@ -483,7 +558,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
+	handler = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -492,7 +567,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	}
 
 	// test for failed db search
-	reqBody = PostAvailabilityBody{
+	reqBody = dtos.PostAvailabilityBody{
 		StartDate: "2024-05-30",
 		EndDate: "2024-06-06",
 	}
@@ -509,7 +584,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
+	handler = middleware.ValidateMiddleware(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 

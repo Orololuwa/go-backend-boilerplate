@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,11 +11,13 @@ import (
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
 	"github.com/Orololuwa/go-backend-boilerplate/src/driver"
+	"github.com/Orololuwa/go-backend-boilerplate/src/dtos"
 	"github.com/Orololuwa/go-backend-boilerplate/src/helpers"
 	"github.com/Orololuwa/go-backend-boilerplate/src/models"
 	"github.com/Orololuwa/go-backend-boilerplate/src/repository"
 	dbrepo "github.com/Orololuwa/go-backend-boilerplate/src/repository/db-repo"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-playground/validator/v10"
 )
 
 type Repository struct {
@@ -64,15 +68,7 @@ func (m *Repository) Health(w http.ResponseWriter, r *http.Request){
 	w.Write(out)
 }
 
-type ReservationBody struct {
-	FirstName string `json:"firstName"`
-	LastName string `json:"lastName"`
-	Email string `json:"email"`
-	Phone string `json:"phone"`
-	StartDate string `json:"startDate"`
-	EndDate string `json:"endDate"`
-	RoomId string `json:"roomId"`
-}
+
 
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -80,10 +76,22 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var body ReservationBody
+	var body dtos.ReservationBody
+
+
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusInternalServerError, "")
+		return
+	}
+
+
+	// validate the request body
+	err = m.App.Validate.Struct(body)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		log.Println(err)
+		helpers.ClientError(w, err, http.StatusBadRequest, errors.Error())
 		return
 	}
 
@@ -144,10 +152,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	helpers.ClientResponseWriter(w, nil, http.StatusCreated, "reservation booked successfully")
 }
 
-type PostAvailabilityBody struct {
-	StartDate string `json:"startDate"`
-	EndDate string `json:"endDate"`
-}
+
 
 func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -155,12 +160,13 @@ func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var body PostAvailabilityBody
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		helpers.ClientError(w, err, http.StatusBadRequest, "")
-		return
-	}
+	var body dtos.PostAvailabilityBody
+	requestBody, ok := r.Context().Value("validatedRequestBody").(*dtos.PostAvailabilityBody)
+    if !ok || requestBody == nil {
+		helpers.ClientError(w, errors.New("failed to retrieve request body"), http.StatusBadRequest, "")
+        return
+    }
+	body = *requestBody
 
 	start := body.StartDate
 	end := body.EndDate
@@ -196,27 +202,21 @@ func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.R
 
 	var id int
 	var err error
-	if m.App.GoEnv == "test" {
-		exploded := strings.Split(r.RequestURI, "/")
-		id, err = strconv.Atoi(exploded[2])
-		if err != nil {
-			helpers.ClientError(w, err, http.StatusInternalServerError, "missing URL param")
+	
+	exploded := strings.Split(r.RequestURI, "/")
+	id, err = strconv.Atoi(exploded[2])
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusInternalServerError, "missing URL param")
 		return
-		}
-	}else{		
-		id, err = strconv.Atoi(chi.URLParam(r, "id"))
-		if err != nil {
-			helpers.ClientError(w, err, http.StatusInternalServerError, "")
-			return
-		}
 	}
 
-	var body PostAvailabilityBody
-	err = json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		helpers.ClientError(w, err, http.StatusBadRequest, "")
-		return
-	}
+	var body dtos.PostAvailabilityBody
+	requestBody, ok := r.Context().Value("validatedRequestBody").(*dtos.PostAvailabilityBody)
+    if !ok || requestBody == nil {
+		helpers.ClientError(w, errors.New("failed to retrieve request body"), http.StatusBadRequest, "")
+        return
+    }
+	body = *requestBody
 
 	start := body.StartDate
 	end := body.EndDate
