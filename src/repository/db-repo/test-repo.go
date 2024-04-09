@@ -25,16 +25,6 @@ func (m *testDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
  	return nil
 }
 
-// SearchAvailabilityForDatesByRoomId returns true if availability exists for a room_id and false if no availability exists
-func (m *testDBRepo) SearchAvailabilityForDatesByRoomId(start, end time.Time, roomId int) (bool, error){
-	// fail if roomId is 2
-	if roomId == 2 {
-		return false, errors.New("reservation for room not found")
-	}
-
-	return true, nil
-}
-
 // SearchAvailabilityForAllRooms returns a slice of rooms for a given date range
 func (m *testDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]models.Room, error){
 	var rooms = make([]models.Room, 0)
@@ -47,6 +37,27 @@ func (m *testDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]mode
 	return rooms, nil
 }
 
+// SearchAvailabilityForDatesByRoomId returns true if availability exists for a room_id and false if no availability exists
+func (m *testDBRepo) SearchAvailabilityForDatesByRoomId(start, end time.Time, roomId int) (bool, error){
+	// simulate failure for roomId 2
+	if roomId == 2 {
+		return false, errors.New("reservation for room not found")
+	}
+
+	return true, nil
+}
+
+func (m *testDBRepo) GetAllRooms(id int, room_name string, created_at string, updated_at string) ([]models.Room, error){
+	var rooms = make([]models.Room, 0)
+
+	// simulate failure for roomId 2
+	if id == 2 {
+		return rooms, errors.New("error getting rooms")
+	}
+
+	return rooms, nil	
+}
+
 func (m *testDBRepo) GetRoomById(id int) (models.Room, error) {
 	var room models.Room
 
@@ -55,14 +66,4 @@ func (m *testDBRepo) GetRoomById(id int) (models.Room, error) {
 	}
 
 	return room, nil
-}
-
-func (m *testDBRepo) GetAllRooms(id int, room_name string, created_at string, updated_at string) ([]models.Room, error){
-	var rooms = make([]models.Room, 0)
-
-	if id == 2 {
-		return rooms, errors.New("error getting rooms")
-	}
-
-	return rooms, nil	
 }

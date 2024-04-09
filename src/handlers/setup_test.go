@@ -14,7 +14,7 @@ import (
 var testApp config.AppConfig
 
 func TestMain (m *testing.M){
-	testApp.GoEnv = "test" //This should be gotten from the environment variables
+	testApp.GoEnv = "test"
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	testApp.InfoLog = infoLog
