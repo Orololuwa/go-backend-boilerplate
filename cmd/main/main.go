@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -13,11 +14,6 @@ import (
 )
 
 const portNumber = ":8085"
-
-const dbHost = "localhost"
-const dbPort = "5432"
-const dbName = "bookings"
-const dbUser = "orololuwa"
 
 var app config.AppConfig
 var infoLog *log.Logger
@@ -43,8 +39,19 @@ func main (){
 	}
 }
 
-func run() (*driver.DB, error) {
-	app.GoEnv = "development" //This should be gotten from the environment variables
+func run() (*driver.DB, error) {	
+	// read flags
+	goEnv := flag.String("goenv", "development", "the application environment")
+	dbHost := flag.String("dbhost", "localhost", "the database host")
+	dbPort := flag.String("dbport", "5432", "the database port")
+	dbName := flag.String("dbname", "", "the database name")
+	dbUser := flag.String("dbuser", "", "the database user")
+	dbPassword := flag.String("dbpassword", "", "the database password")
+	dbSSL := flag.String("dbssl", "disable", "the database ssl settings(disable, prefer, require)")
+
+	flag.Parse()
+
+	app.GoEnv = *goEnv
 
 	infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app.InfoLog = infoLog
@@ -57,7 +64,8 @@ func run() (*driver.DB, error) {
 
 	// Connecto to DB
 	log.Println("Connecting to dabase")
-	db, err := driver.ConnectSQL(fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=", dbHost, dbPort, dbName, dbUser))
+	connectionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", *dbHost, *dbPort, *dbName, *dbUser, *dbPassword, *dbSSL)
+	db, err := driver.ConnectSQL(connectionString)
 	if err != nil {
 		log.Fatal("Cannot conect to database: Dying!", err)
 	}
