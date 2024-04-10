@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidateMiddleware(next http.Handler, requestBodyStruct interface{}) http.Handler {
+func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
         decoder := json.NewDecoder(r.Body)

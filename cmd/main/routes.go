@@ -23,8 +23,8 @@ func routes() http.Handler {
 	mux.Post("/reservation", handlers.Repo.PostReservation)
 
 	// rooms
-	mux.Post("/search-availability", middlewareInternal.ValidateMiddleware(http.HandlerFunc(handlers.Repo.SearchAvailability), &dtos.PostAvailabilityBody{} ).ServeHTTP)
-	mux.Post("/search-availability/{id}", middlewareInternal.ValidateMiddleware(http.HandlerFunc(handlers.Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{} ).ServeHTTP)
+	mux.Post("/search-availability", middlewareInternal.ValidateReqBody(http.HandlerFunc(handlers.Repo.SearchAvailability), &dtos.PostAvailabilityBody{} ).ServeHTTP)
+	mux.Post("/search-availability/{id}", middlewareInternal.ValidateReqBody(http.HandlerFunc(handlers.Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{} ).ServeHTTP)
 	mux.Get("/room", handlers.Repo.GetAllRooms)
 	mux.Get("/room/{id}", handlers.Repo.GetRoomById)
 

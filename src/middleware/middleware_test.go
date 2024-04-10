@@ -23,12 +23,12 @@ func TestValidationMiddleware(t *testing.T){
 	res := httptest.NewRecorder()
 
 	reqBodyRef := &validationMiddleWareBody{}
-	handlerChain := ValidateMiddleware(http.HandlerFunc(middlewareHandler), reqBodyRef)
+	handlerChain := ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
-		t.Errorf("ValidateMiddleware expected status code %d for missing request body, got %d", http.StatusBadRequest, res.Code)
+		t.Errorf("ValidateReqBody expected status code %d for missing request body, got %d", http.StatusBadRequest, res.Code)
 	}
 
 	// test for invalid email
@@ -46,12 +46,12 @@ func TestValidationMiddleware(t *testing.T){
 	req.Header.Set("Content-Type", "application/json")
 	res = httptest.NewRecorder()
 
-	handlerChain = ValidateMiddleware(http.HandlerFunc(middlewareHandler), reqBodyRef)
+	handlerChain = ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
-		t.Errorf("ValidateMiddleware expected status code %d for invalid email, got %d", http.StatusBadRequest, res.Code)
+		t.Errorf("ValidateReqBody expected status code %d for invalid email, got %d", http.StatusBadRequest, res.Code)
 	}
 
 	// test for valid email
@@ -68,11 +68,11 @@ func TestValidationMiddleware(t *testing.T){
 	req = httptest.NewRequest("POST", "/route", bytes.NewBuffer(jsonData))
 	res = httptest.NewRecorder()
 
-	handlerChain = ValidateMiddleware(http.HandlerFunc(middlewareHandler), reqBodyRef)
+	handlerChain = ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
-		t.Errorf("ValidateMiddleware expected status code %d, got %d", http.StatusOK, res.Code)
+		t.Errorf("ValidateReqBody expected status code %d, got %d", http.StatusOK, res.Code)
 	}
 }
