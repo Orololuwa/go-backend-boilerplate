@@ -3,10 +3,15 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/helpers"
+	"github.com/Orololuwa/go-backend-boilerplate/src/types"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Handler {
@@ -29,6 +34,36 @@ func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Hand
 
 		ctx := context.WithValue(r.Context(), "validatedRequestBody", requestBodyStruct)
 		r = r.WithContext(ctx)
+
+        next.ServeHTTP(w, r)
+    })
+}
+
+func Authorization(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        tokenString := r.Header.Get("Authorization")
+        if tokenString == "" {
+            helpers.ClientError(w, errors.New("missing token"), http.StatusUnauthorized, "")
+            return
+        }
+        tokenString = tokenString[len("Bearer "):]
+
+        token, err := jwt.ParseWithClaims(tokenString, &types.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+            return []byte(os.Getenv("JWT_SECRET")), nil
+        })
+        if err != nil {
+            helpers.ClientError(w, errors.New("invalid or expired token"), http.StatusUnauthorized, "")
+            return
+        }
+
+        claims, ok := token.Claims.(*types.JWTClaims)
+        if ok {
+            // get the user's data and verify
+            fmt.Println(claims.Email)
+        }else{
+            helpers.ClientError(w, errors.New("unknown claims type, cannot proceed"), http.StatusInternalServerError, "")
+            return
+        }
 
         next.ServeHTTP(w, r)
     })

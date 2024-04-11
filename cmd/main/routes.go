@@ -28,5 +28,11 @@ func routes() http.Handler {
 	mux.Get("/room", handlers.Repo.GetAllRooms)
 	mux.Get("/room/{id}", handlers.Repo.GetRoomById)
 
+	// auth
+	mux.Post("/login", middlewareInternal.ValidateReqBody(http.HandlerFunc(handlers.Repo.LoginUser), &dtos.UserLoginBody{} ).ServeHTTP)
+
+	// protected route
+	mux.Get("/protected-route", middlewareInternal.Authorization(http.HandlerFunc(handlers.Repo.ProtectedRoute)).ServeHTTP)
+
 	return mux;
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -16,8 +17,10 @@ import (
 	"github.com/Orololuwa/go-backend-boilerplate/src/models"
 	"github.com/Orololuwa/go-backend-boilerplate/src/repository"
 	dbrepo "github.com/Orololuwa/go-backend-boilerplate/src/repository/db-repo"
+	"github.com/Orololuwa/go-backend-boilerplate/src/types"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type Repository struct {
@@ -297,3 +300,37 @@ func (m *Repository) GetAllRooms(w http.ResponseWriter, r *http.Request){
 	helpers.ClientResponseWriter(w, rooms, http.StatusOK, "rooms retrieved successfully")
 }
 
+
+func (m *Repository) LoginUser(w http.ResponseWriter, r *http.Request){
+	var body dtos.UserLoginBody
+	requestBody, ok := r.Context().Value("validatedRequestBody").(*dtos.UserLoginBody)
+    if !ok || requestBody == nil {
+		helpers.ClientError(w, errors.New("failed to retrieve request body"), http.StatusBadRequest, "")
+        return
+    }
+	body = *requestBody
+
+	claims := types.JWTClaims{
+		Email: body.Email,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(10 * time.Minute)),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secretKey := []byte(os.Getenv("JWT_SECRET"))
+
+	tokenString, err := token.SignedString(secretKey)
+
+	if err != nil {
+		helpers.ClientError(w, err, http.StatusInternalServerError, "")
+	}
+
+	data := types.LoginSuccessResponse{Email: body.Email, Token: tokenString}
+
+	helpers.ClientResponseWriter(w, data, http.StatusFound, "logged in successfully")
+}
+
+func (m *Repository) ProtectedRoute(w http.ResponseWriter, r *http.Request){
+	helpers.ClientResponseWriter(w, nil, http.StatusOK, "welcome to the protected route")
+}
