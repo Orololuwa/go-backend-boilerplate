@@ -3,9 +3,12 @@ package middleware
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/Orololuwa/go-backend-boilerplate/src/helpers"
 )
 
 type validationMiddleWareBody struct {
@@ -74,5 +77,60 @@ func TestValidationMiddleware(t *testing.T){
 
 	if res.Code != http.StatusOK {
 		t.Errorf("ValidateReqBody expected status code %d, got %d", http.StatusOK, res.Code)
+	}
+}
+
+func TestAuthorizationMiddleware(t *testing.T){
+	// test for missing "Authorization" in request header
+	req := httptest.NewRequest("POST", "/route", nil)
+	req.Header.Set("Content-Type", "application/json")
+	res := httptest.NewRecorder()
+
+	handlerChain := Authorization(http.HandlerFunc(middlewareHandler))
+
+	handlerChain.ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Errorf("Authorization expected status code %d for missing token in the header, got %d", http.StatusUnauthorized, res.Code)
+	}
+
+	// test for invalid or expired token
+	// tokenString, err := helpers.CreateToken("johndoe@gmail.com")
+	// if (err != nil){
+	// 	t.Fatal("error creating test token")
+	// }
+
+	req = httptest.NewRequest("POST", "/route", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", "invalid tokenString"))
+
+	res = httptest.NewRecorder()
+
+	handlerChain = Authorization(http.HandlerFunc(middlewareHandler))
+
+	handlerChain.ServeHTTP(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Errorf("Authorization expected status code %d for invalid token, got %d", http.StatusUnauthorized, res.Code)
+	}
+
+	// test for valid token
+	tokenString, err := helpers.CreateJWTToken("johndoe@gmail.com")
+	if (err != nil){
+		t.Fatal("error creating test token")
+	}
+
+	req = httptest.NewRequest("POST", "/route", nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
+
+	res = httptest.NewRecorder()
+
+	handlerChain = Authorization(http.HandlerFunc(middlewareHandler))
+
+	handlerChain.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Errorf("Authorization expected status code %d for invalid token, got %d", http.StatusOK, res.Code)
 	}
 }

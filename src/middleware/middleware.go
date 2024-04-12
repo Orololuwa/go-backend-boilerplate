@@ -6,12 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/helpers"
 	"github.com/Orololuwa/go-backend-boilerplate/src/types"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Handler {
@@ -48,9 +46,7 @@ func Authorization(next http.Handler) http.Handler {
         }
         tokenString = tokenString[len("Bearer "):]
 
-        token, err := jwt.ParseWithClaims(tokenString, &types.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-            return []byte(os.Getenv("JWT_SECRET")), nil
-        })
+        token, err := helpers.VerifyJWTToken(tokenString)
         if err != nil {
             helpers.ClientError(w, errors.New("invalid or expired token"), http.StatusUnauthorized, "")
             return

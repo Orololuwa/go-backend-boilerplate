@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -20,7 +19,6 @@ import (
 	"github.com/Orololuwa/go-backend-boilerplate/src/types"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type Repository struct {
@@ -310,17 +308,7 @@ func (m *Repository) LoginUser(w http.ResponseWriter, r *http.Request){
     }
 	body = *requestBody
 
-	claims := types.JWTClaims{
-		Email: body.Email,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(10 * time.Minute)),
-		},
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secretKey := []byte(os.Getenv("JWT_SECRET"))
-
-	tokenString, err := token.SignedString(secretKey)
+	tokenString, err := helpers.CreateJWTToken(body.Email)
 
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusInternalServerError, "")
@@ -328,7 +316,7 @@ func (m *Repository) LoginUser(w http.ResponseWriter, r *http.Request){
 
 	data := types.LoginSuccessResponse{Email: body.Email, Token: tokenString}
 
-	helpers.ClientResponseWriter(w, data, http.StatusFound, "logged in successfully")
+	helpers.ClientResponseWriter(w, data, http.StatusOK, "logged in successfully")
 }
 
 func (m *Repository) ProtectedRoute(w http.ResponseWriter, r *http.Request){
