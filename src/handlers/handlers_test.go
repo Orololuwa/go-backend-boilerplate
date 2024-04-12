@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/dtos"
-	"github.com/Orololuwa/go-backend-boilerplate/src/middleware"
 )
 
 type postData struct {
@@ -286,7 +285,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 	res := httptest.NewRecorder()
 
 	reqBodyRef := &dtos.PostAvailabilityBody{}
-	handlerChain := middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+	handlerChain := mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -312,7 +311,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
-	handlerChain = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -327,7 +326,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
-	handlerChain = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -367,7 +366,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
-	handlerChain = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -393,7 +392,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
-	handlerChain = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -419,7 +418,7 @@ func TestRepository_SearchAvailability(t *testing.T){
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
-	handlerChain = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -446,7 +445,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res := httptest.NewRecorder()
 
-	handler := middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler := mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -461,7 +460,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -476,7 +475,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -491,7 +490,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -532,7 +531,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -558,7 +557,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -584,7 +583,7 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handler = middleware.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
+	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
 
 	handler.ServeHTTP(res, req)
 
@@ -723,7 +722,7 @@ func TestLoginHandler(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handlerChain := middleware.ValidateReqBody(http.HandlerFunc(Repo.LoginUser), reqBodyRef)
+	handlerChain := mdTest.ValidateReqBody(http.HandlerFunc(Repo.LoginUser), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 

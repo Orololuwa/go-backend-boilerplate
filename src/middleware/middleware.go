@@ -7,12 +7,35 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/Orololuwa/go-backend-boilerplate/src/config"
+	"github.com/Orololuwa/go-backend-boilerplate/src/driver"
 	"github.com/Orololuwa/go-backend-boilerplate/src/helpers"
+	"github.com/Orololuwa/go-backend-boilerplate/src/repository"
+	dbrepo "github.com/Orololuwa/go-backend-boilerplate/src/repository/db-repo"
 	"github.com/Orololuwa/go-backend-boilerplate/src/types"
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Handler {
+type Middleware struct {
+    App *config.AppConfig
+	DB repository.DatabaseRepo
+}
+
+func New(a *config.AppConfig, db *driver.DB) *Middleware {
+    return &Middleware{
+        App: a,
+        DB: dbrepo.NewPostgresDBRepo(db.SQL),
+    }
+}
+
+func NewTest(a *config.AppConfig) *Middleware {
+    return &Middleware{
+        App: a,
+        DB: dbrepo.NewTestingDBRepo(),
+    }
+}
+
+func (m *Middleware) ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
         decoder := json.NewDecoder(r.Body)
@@ -23,8 +46,7 @@ func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Hand
 
 		defer r.Body.Close()
 
-        validate := validator.New()
-        if err := validate.Struct(requestBodyStruct); err != nil {
+        if err := m.App.Validate.Struct(requestBodyStruct); err != nil {
             errors := err.(validator.ValidationErrors)
 			helpers.ClientError(w, err, http.StatusBadRequest, errors.Error())
             return
@@ -37,7 +59,7 @@ func ValidateReqBody(next http.Handler, requestBodyStruct interface{}) http.Hand
     })
 }
 
-func Authorization(next http.Handler) http.Handler {
+func (m *Middleware) Authorization(next http.Handler) http.Handler {
     return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         tokenString := r.Header.Get("Authorization")
         if tokenString == "" {
@@ -54,8 +76,8 @@ func Authorization(next http.Handler) http.Handler {
 
         claims, ok := token.Claims.(*types.JWTClaims)
         if ok {
-            // get the user's data and verify
-            fmt.Println(claims.Email)
+            // get the user's data from the database and perform any verification necessary
+            fmt.Println(claims.Email, m.App.GoEnv)
         }else{
             helpers.ClientError(w, errors.New("unknown claims type, cannot proceed"), http.StatusInternalServerError, "")
             return

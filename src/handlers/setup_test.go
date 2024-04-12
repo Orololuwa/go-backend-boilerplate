@@ -7,12 +7,15 @@ import (
 	"testing"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/config"
+	"github.com/Orololuwa/go-backend-boilerplate/src/middleware"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	middlewareChi "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
 )
 
 var testApp config.AppConfig
+var mdTest *middleware.Middleware
+
 
 func TestMain (m *testing.M){
 	testApp.GoEnv = "test"
@@ -29,6 +32,9 @@ func TestMain (m *testing.M){
 	repo := NewTestRepo(&testApp)
 	NewHandlers(repo)
 
+	mdTest = middleware.NewTest(&testApp)
+
+
 	os.Exit(m.Run())
 }
 
@@ -36,7 +42,7 @@ func TestMain (m *testing.M){
 func getRoutes() http.Handler {
 	mux := chi.NewRouter()
 
-	mux.Use(middleware.Logger)
+	mux.Use(middlewareChi.Logger)
 
 	mux.Get("/health", Repo.Health)
 	mux.Post("/reservation", Repo.PostReservation)

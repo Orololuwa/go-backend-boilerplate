@@ -26,7 +26,7 @@ func TestValidationMiddleware(t *testing.T){
 	res := httptest.NewRecorder()
 
 	reqBodyRef := &validationMiddleWareBody{}
-	handlerChain := ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
+	handlerChain := mdTest.ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -49,7 +49,7 @@ func TestValidationMiddleware(t *testing.T){
 	req.Header.Set("Content-Type", "application/json")
 	res = httptest.NewRecorder()
 
-	handlerChain = ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -71,7 +71,7 @@ func TestValidationMiddleware(t *testing.T){
 	req = httptest.NewRequest("POST", "/route", bytes.NewBuffer(jsonData))
 	res = httptest.NewRecorder()
 
-	handlerChain = ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
+	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -86,7 +86,7 @@ func TestAuthorizationMiddleware(t *testing.T){
 	req.Header.Set("Content-Type", "application/json")
 	res := httptest.NewRecorder()
 
-	handlerChain := Authorization(http.HandlerFunc(middlewareHandler))
+	handlerChain := mdTest.Authorization(http.HandlerFunc(middlewareHandler))
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -106,7 +106,7 @@ func TestAuthorizationMiddleware(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handlerChain = Authorization(http.HandlerFunc(middlewareHandler))
+	handlerChain = mdTest.Authorization(http.HandlerFunc(middlewareHandler))
 
 	handlerChain.ServeHTTP(res, req)
 
@@ -126,7 +126,7 @@ func TestAuthorizationMiddleware(t *testing.T){
 
 	res = httptest.NewRecorder()
 
-	handlerChain = Authorization(http.HandlerFunc(middlewareHandler))
+	handlerChain = mdTest.Authorization(http.HandlerFunc(middlewareHandler))
 
 	handlerChain.ServeHTTP(res, req)
 

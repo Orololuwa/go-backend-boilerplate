@@ -31,7 +31,7 @@ func main (){
 
 	srv := &http.Server{
 		Addr: portNumber,
-		Handler: routes(),
+		Handler: routes(&app, db),
 	}
 
 	err = srv.ListenAndServe()
