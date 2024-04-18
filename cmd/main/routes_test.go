@@ -1,9 +1,7 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/driver"
@@ -11,7 +9,7 @@ import (
 )
 
 func TestRoutes(t *testing.T){
-	sql := createTestDBInstance()
+	sql := driver.CreateTestDBInstance()
 	conn := driver.DB{SQL: sql}
 	mux := routes(&testApp, &conn)
 
@@ -23,11 +21,3 @@ func TestRoutes(t *testing.T){
 	}
 }
 
-func createTestDBInstance() *sql.DB {
-    db, err := sql.Open("pgx", ":memory:")
-    if err != nil {
-        log.Fatalf("Error opening database connection: %v", err)
-    }
-	
-    return db
-}

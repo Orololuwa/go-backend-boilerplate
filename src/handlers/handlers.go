@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -69,8 +71,6 @@ func (m *Repository) Health(w http.ResponseWriter, r *http.Request){
 	w.Write(out)
 }
 
-
-
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -78,8 +78,6 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var body dtos.ReservationBody
-
-
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusInternalServerError, "")
@@ -129,31 +127,40 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		RoomID: roomId,
 	}
 
+	ctx := context.Background()
 
-	newReservationId, err := m.DB.InsertReservation(reservation)
+	err = m.DB.Transaction(ctx, func(ctx context.Context, tx *sql.Tx) error {
+		newReservationId, err := m.DB.InsertReservation(ctx, tx, reservation)
+		if err != nil {
+            return err
+        }
+	
+		restriction := models.RoomRestriction{
+			StartDate: startDate,
+			EndDate: endDate,
+			RoomID: roomId,
+			ReservationID: newReservationId,
+			RestrictionID: 1,
+		}
+	
+		err = m.DB.InsertRoomRestriction(ctx, tx, restriction)
+		if err != nil {
+            return err
+        }
+
+		return nil
+	})
+
+
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusInternalServerError, "")
 		return
 	}
 
-	restriction := models.RoomRestriction{
-		StartDate: startDate,
-		EndDate: endDate,
-		RoomID: roomId,
-		ReservationID: newReservationId,
-		RestrictionID: 1,
-	}
 
-	err = m.DB.InsertRoomRestriction(restriction)
-	if err != nil {
-		helpers.ClientError(w, err, http.StatusInternalServerError, "")
-		return
-	}
 
 	helpers.ClientResponseWriter(w, nil, http.StatusCreated, "reservation booked successfully")
 }
-
-
 
 func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -186,7 +193,9 @@ func (m *Repository) SearchAvailability(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	rooms, err := m.DB.SearchAvailabilityForAllRooms(startDate, endDate)
+	ctx := context.Background()
+
+	rooms, err := m.DB.SearchAvailabilityForAllRooms(ctx, nil, startDate, endDate)
 	if (err != nil){
 		helpers.ClientError(w, err, http.StatusNotFound, "")
 		return
@@ -236,7 +245,10 @@ func (m *Repository) SearchAvailabilityByRoomId(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	isRoomAvailable, err := m.DB.SearchAvailabilityForDatesByRoomId(startDate, endDate, id)
+	ctx := context.Background()
+
+
+	isRoomAvailable, err := m.DB.SearchAvailabilityForDatesByRoomId(ctx, nil, startDate, endDate, id)
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusNotFound, "")
 		return
@@ -264,7 +276,7 @@ func (m *Repository) GetRoomById(w http.ResponseWriter, r *http.Request){
 		}
 	}
 
-	room, err := m.DB.GetRoomById(id)
+	room, err := m.DB.GetRoomById(context.Background(), nil, id)
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusNotFound, "room not found")
 		return
@@ -288,8 +300,7 @@ func (m *Repository) GetAllRooms(w http.ResponseWriter, r *http.Request){
 		id = paramId
 	}
 
-
-	rooms, err := m.DB.GetAllRooms(id, room_name, "", "")
+	rooms, err := m.DB.GetAllRooms(context.Background(), nil, id, room_name, "", "")
 	if err != nil {
 		helpers.ClientError(w, err, http.StatusNotFound, "")
 		return

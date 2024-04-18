@@ -2,6 +2,7 @@ package driver
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	_ "github.com/jackc/pgconn"
@@ -60,4 +61,13 @@ func NewDatabase (dsn string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func CreateTestDBInstance() *sql.DB {
+    db, err := sql.Open("pgx", ":memory:")
+    if err != nil {
+        log.Fatalf("Error opening database connection: %v", err)
+    }
+	
+    return db
 }
