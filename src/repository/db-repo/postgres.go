@@ -2,14 +2,15 @@ package dbrepo
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/models"
 )
 
-func (m *postgresDBRepo) InsertReservation (res models.Reservation) (int, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *postgresDBRepo) InsertReservation(ctx context.Context, tx *sql.Tx, res models.Reservation) (int, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var newId int
@@ -18,7 +19,11 @@ func (m *postgresDBRepo) InsertReservation (res models.Reservation) (int, error)
 			 end_date, room_id, created_at, updated_at)
 			 values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning id`
 
-	 err := m.DB.QueryRowContext(ctx, stmt, 
+	var err error
+
+	if tx != nil {
+		err = tx.QueryRowContext(
+			ctx, stmt, 
 			res.FirstName,
 			res.LastName,
 			res.Email,
@@ -28,7 +33,23 @@ func (m *postgresDBRepo) InsertReservation (res models.Reservation) (int, error)
 			res.RoomID,
 			time.Now(),
 			time.Now(),
-		).Scan(&newId)	
+		).Scan(&newId)
+	}else{
+		err = m.DB.QueryRowContext(
+			ctx, stmt, 
+			res.FirstName,
+			res.LastName,
+			res.Email,
+			res.Phone,
+			res.StartDate,
+			res.EndDate,
+			res.RoomID,
+			time.Now(),
+			time.Now(),
+		).Scan(&newId)
+	}
+
+	
 	
 	if err != nil {
 		return 0, err
@@ -37,21 +58,37 @@ func (m *postgresDBRepo) InsertReservation (res models.Reservation) (int, error)
 	return newId, nil
 }
 
-func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *postgresDBRepo) InsertRoomRestriction(ctx context.Context, tx *sql.Tx, r models.RoomRestriction) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	stmt := `insert into room_restrictions (start_date, end_date, room_id, reservation_id,
 			restriction_id, created_at, updated_at) values ($1, $2, $3, $4, $5, $6, $7 )`
 
-	_, err := m.DB.ExecContext(ctx,	stmt,
-							r.StartDate,
-							r.EndDate,
-							r.RoomID,
-							r.ReservationID,
-							r.RestrictionID,
-							time.Now(),
-							time.Now())
+	var err error
+	if tx != nil {
+		_, err = tx.ExecContext(
+			ctx, stmt,
+			r.StartDate,
+			r.EndDate,
+			r.RoomID,
+			r.ReservationID,
+			r.RestrictionID,
+			time.Now(),
+			time.Now(),
+		)
+	}else{
+		_, err = m.DB.ExecContext(
+			ctx, stmt,
+			r.StartDate,
+			r.EndDate,
+			r.RoomID,
+			r.ReservationID,
+			r.RestrictionID,
+			time.Now(),
+			time.Now(),
+		)
+	}
 	
 	if err != nil {
 		return err
@@ -61,8 +98,8 @@ func (m *postgresDBRepo) InsertRoomRestriction(r models.RoomRestriction) error {
 }
 
 // SearchAvailabilityForDatesByRoomId returns true if availability exists for a room_id and false if no availability exists
-func (m *postgresDBRepo) SearchAvailabilityForDatesByRoomId(start, end time.Time, roomId int) (bool, error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *postgresDBRepo) SearchAvailabilityForDatesByRoomId(ctx context.Context, tx *sql.Tx, start, end time.Time, roomId int) (bool, error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var numRows int
@@ -77,7 +114,12 @@ func (m *postgresDBRepo) SearchAvailabilityForDatesByRoomId(start, end time.Time
 			and $2 < end_date and $3 > start_date
 	`
 
-	row := m.DB.QueryRowContext(ctx, query, roomId, start, end)
+	var row *sql.Row
+	if tx != nil {
+		row = tx.QueryRowContext(ctx, query, roomId, start, end)
+	}else {
+		row = m.DB.QueryRowContext(ctx, query, roomId, start, end)
+	}
 	err := row.Scan(&numRows)
 	if err != nil {
 		return false, err
@@ -91,8 +133,8 @@ func (m *postgresDBRepo) SearchAvailabilityForDatesByRoomId(start, end time.Time
 }
 
 // SearchAvailabilityForAllRooms returns a slice of rooms for a given date range
-func (m *postgresDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]models.Room, error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *postgresDBRepo) SearchAvailabilityForAllRooms(ctx context.Context, tx *sql.Tx, start, end time.Time) ([]models.Room, error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var rooms = make([]models.Room, 0)
@@ -107,7 +149,13 @@ func (m *postgresDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]
 		(select rr.room_id from room_restrictions rr where $1 < rr.end_date and $2 > rr.start_date)
 	`
 
-	rows, err := m.DB.QueryContext(ctx, query, start, end)
+	var rows *sql.Rows
+	var err error
+	if tx != nil {
+		rows, err = tx.QueryContext(ctx, query, start, end)
+	}else{	
+		rows, err = m.DB.QueryContext(ctx, query, start, end)
+	}
 	if err != nil {
 		return rooms, err
 	}
@@ -129,8 +177,8 @@ func (m *postgresDBRepo) SearchAvailabilityForAllRooms(start, end time.Time) ([]
 	return rooms, nil
 }
 
-func (m *postgresDBRepo) GetRoomById(id int) (models.Room, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *postgresDBRepo) GetRoomById(ctx context.Context, tx *sql.Tx, id int) (models.Room, error) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var room models.Room
@@ -139,7 +187,12 @@ func (m *postgresDBRepo) GetRoomById(id int) (models.Room, error) {
 		select id, room_name, created_at, updated_at from rooms where id = $1
 	`
 
-	row := m.DB.QueryRowContext(ctx, query, id)
+	var row *sql.Row
+	if tx != nil {
+		row = tx.QueryRowContext(ctx, query, id)
+	}else {
+		row = m.DB.QueryRowContext(ctx, query, id)
+	}
 	err := row.Scan(&room.ID, &room.RoomName, &room.CreatedAt, &room.UpdatedAt)
 
 	if err != nil {
@@ -149,8 +202,8 @@ func (m *postgresDBRepo) GetRoomById(id int) (models.Room, error) {
 	return room, nil
 }
 
-func (m *postgresDBRepo) GetAllRooms(id int, room_name string, created_at string, updated_at string) ([]models.Room, error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *postgresDBRepo) GetAllRooms(ctx context.Context, tx *sql.Tx, id int, room_name string, created_at string, updated_at string) ([]models.Room, error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var rooms = make([]models.Room, 0)
@@ -185,7 +238,13 @@ func (m *postgresDBRepo) GetAllRooms(id int, room_name string, created_at string
 		args = append(args, updated_at)
 	}
 
-	rows, err := m.DB.QueryContext(ctx, query, args...)
+	var rows *sql.Rows
+	var err error
+	if tx != nil {
+		rows, err = tx.QueryContext(ctx, query, args...)
+	}else{
+		rows, err = m.DB.QueryContext(ctx, query, args...)
+	}
 	if err != nil {
         return rooms, err
     }
@@ -199,7 +258,7 @@ func (m *postgresDBRepo) GetAllRooms(id int, room_name string, created_at string
 		rooms = append(rooms, room)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return rooms, err
 	}
 
