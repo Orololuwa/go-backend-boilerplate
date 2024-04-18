@@ -236,7 +236,7 @@ func TestRepository_PostReservation(t *testing.T){
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
-		t.Errorf("PostReservation handler returned wrong response code for failed DB insert: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
+		t.Errorf("PostReservation handler returned wrong response code for failed reservation DB insert: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
 	}
 
 	// test for failure to insert room restriction
@@ -262,7 +262,7 @@ func TestRepository_PostReservation(t *testing.T){
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
-		t.Errorf("PostReservation handler returned wrong response code for failed DB insert: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
+		t.Errorf("PostReservation handler returned wrong response code for failed restriction DB insert: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
 	}
 }
 

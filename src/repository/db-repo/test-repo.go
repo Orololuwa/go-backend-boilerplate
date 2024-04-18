@@ -10,6 +10,9 @@ import (
 )
 
 func (m *testDBRepo) Transaction(ctx context.Context, operation func(context.Context, *sql.Tx) error) error {
+	if err := operation(ctx, nil); err != nil {
+        return err
+    }
 
     return nil
 }
