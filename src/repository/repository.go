@@ -17,3 +17,7 @@ type DatabaseRepo interface {
 	GetRoomById(ctx context.Context, tx *sql.Tx, id int) (models.Room, error)
 	GetAllRooms(ctx context.Context, tx *sql.Tx, id int, room_name string, created_at string, updated_at string)([]models.Room, error)
 }
+
+type UserDBRepo interface {
+	CreateAUser(user models.User) (int, error)
+}

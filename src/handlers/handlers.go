@@ -26,6 +26,7 @@ import (
 type Repository struct {
 	App *config.AppConfig
 	DB repository.DatabaseRepo
+	User repository.UserDBRepo
 }
 
 var Repo *Repository
@@ -35,6 +36,7 @@ func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
 		DB: dbrepo.NewPostgresDBRepo(db.SQL),
+		User: dbrepo.NewUserDBRepo(db.SQL),		
 	}
 }
 
@@ -43,6 +45,7 @@ func NewTestRepo(a *config.AppConfig) *Repository {
 	return &Repository{
 		App: a,
 		DB: dbrepo.NewTestingDBRepo(),
+		User: dbrepo.NewUserTestingDBRepo(),
 	}
 }
 

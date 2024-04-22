@@ -9,6 +9,7 @@ import (
 	"github.com/Orololuwa/go-backend-boilerplate/src/models"
 )
 
+// Transactions
 func (m *testDBRepo) Transaction(ctx context.Context, operation func(context.Context, *sql.Tx) error) error {
 	if err := operation(ctx, nil); err != nil {
         return err
@@ -17,6 +18,7 @@ func (m *testDBRepo) Transaction(ctx context.Context, operation func(context.Con
     return nil
 }
 
+// Reservations
 func (m *testDBRepo) InsertReservation(ctx context.Context, tx *sql.Tx, res models.Reservation) (int, error) {
 	// fail if roomId is 2
 	if res.RoomID == 2 {
@@ -26,6 +28,7 @@ func (m *testDBRepo) InsertReservation(ctx context.Context, tx *sql.Tx, res mode
 	return 1, nil
 }
 
+// Room restrictions
 func (m *testDBRepo) InsertRoomRestriction(ctx context.Context, tx *sql.Tx, r models.RoomRestriction) error {
 	// fail if i try to insert a room restriction for room id of 1000
 	if r.RoomID == 1000 {
@@ -35,6 +38,7 @@ func (m *testDBRepo) InsertRoomRestriction(ctx context.Context, tx *sql.Tx, r mo
  	return nil
 }
 
+// Rooms
 // SearchAvailabilityForAllRooms returns a slice of rooms for a given date range
 func (m *testDBRepo) SearchAvailabilityForAllRooms(ctx context.Context, tx *sql.Tx, start, end time.Time) ([]models.Room, error){
 	var rooms = make([]models.Room, 0)
@@ -76,4 +80,12 @@ func (m *testDBRepo) GetRoomById(ctx context.Context, tx *sql.Tx, id int) (model
 	}
 
 	return room, nil
+}
+
+// User
+func (m *testUserDBRepo) CreateAUser(user models.User) (int, error){
+	var newId int
+
+
+	return newId, nil
 }
