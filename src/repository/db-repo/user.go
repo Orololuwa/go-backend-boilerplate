@@ -26,8 +26,8 @@ func NewUserTestingDBRepo() repository.UserDBRepo {
 	}
 }
 
-func (m *user) CreateAUser(user models.User) (int, error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *user) CreateAUser(ctx context.Context, tx *sql.Tx, user models.User) (int, error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var newId int
@@ -38,15 +38,27 @@ func (m *user) CreateAUser(user models.User) (int, error){
 			values 
 				($1, $2, $3, $4, $5, $6)
 			returning id`
-	
-	err := m.DB.QueryRowContext(ctx, query, 
-		user.FirstName, 
-		user.LastName, 
-		user.Email, 
-		user.Password,
-		time.Now(),
-		time.Now(),
-	).Scan(&newId)
+
+	var err error;
+	if tx != nil {
+		err = tx.QueryRowContext(ctx, query, 
+			user.FirstName, 
+			user.LastName, 
+			user.Email, 
+			user.Password,
+			time.Now(),
+			time.Now(),
+		).Scan(&newId)
+	}else{
+		err = m.DB.QueryRowContext(ctx, query, 
+			user.FirstName, 
+			user.LastName, 
+			user.Email, 
+			user.Password,
+			time.Now(),
+			time.Now(),
+		).Scan(&newId)
+	}
 
 	if err != nil {
 		return 0, err
@@ -55,8 +67,8 @@ func (m *user) CreateAUser(user models.User) (int, error){
 	return newId, nil
 }
 
-func (m *user) GetAUser(id int) (models.User, error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *user) GetAUser(ctx context.Context, tx *sql.Tx, id int) (models.User, error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var user models.User
@@ -68,15 +80,28 @@ func (m *user) GetAUser(id int) (models.User, error){
 			id=$1
 	`
 
-	err := m.DB.QueryRowContext(ctx, query, id).Scan(
-		&user.ID,
-		&user.FirstName,
-		&user.LastName,
-		&user.Email,
-		&user.Password,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+	var err error
+	if tx != nil {
+		err = tx.QueryRowContext(ctx, query, id).Scan(
+			&user.ID,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+	}else{
+		err = m.DB.QueryRowContext(ctx, query, id).Scan(
+			&user.ID,
+			&user.FirstName,
+			&user.LastName,
+			&user.Email,
+			&user.Password,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+	}
 
 	if err != nil {
 		return user, err
@@ -85,8 +110,8 @@ func (m *user) GetAUser(id int) (models.User, error){
 	return user, nil
 }
 
-func (m *user) GetAllUser() ([]models.User, error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *user) GetAllUser(ctx context.Context, tx *sql.Tx) ([]models.User, error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	var users = make([]models.User, 0)
@@ -96,7 +121,14 @@ func (m *user) GetAllUser() ([]models.User, error){
 		from users
 	`
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	var rows *sql.Rows
+	var err error
+
+	if tx != nil {
+		rows, err = tx.QueryContext(ctx, query)
+	}else{
+		rows, err = m.DB.QueryContext(ctx, query)
+	}
 	if err != nil {
 		return users, err
 	}
@@ -125,8 +157,8 @@ func (m *user) GetAllUser() ([]models.User, error){
 	return users, nil
 }
 
-func (m *user) UpdateAUsersName(id int, firstName, lastName string)(error){
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *user) UpdateAUsersName(ctx context.Context, tx *sql.Tx, id int, firstName, lastName string)(error){
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	query := `
@@ -136,7 +168,13 @@ func (m *user) UpdateAUsersName(id int, firstName, lastName string)(error){
 			id = $3
 	`
 
-	_, err := m.DB.ExecContext(ctx, query, firstName, lastName, id)
+	var err error
+	if tx != nil{
+		_, err = tx.ExecContext(ctx, query, firstName, lastName, id)
+	}else{
+		_, err = m.DB.ExecContext(ctx, query, firstName, lastName, id)
+	}
+
 	if err != nil{
 		return  err
 	}
@@ -144,13 +182,20 @@ func (m *user) UpdateAUsersName(id int, firstName, lastName string)(error){
 	return nil
 }
 
-func (m *user) DeleteUserByID(id int) error {
-    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+func (m *user) DeleteUserByID(ctx context.Context, tx *sql.Tx, id int) error {
+    ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
     defer cancel()
 
     query := "DELETE FROM users WHERE id = $1"
 
-    _, err := m.DB.ExecContext(ctx, query, id)
+	var err error 
+
+	if tx != nil {
+		_, err = tx.ExecContext(ctx, query, id)
+	}else{
+		_, err = m.DB.ExecContext(ctx, query, id)
+	}
+
     if err != nil {
         return err
     }

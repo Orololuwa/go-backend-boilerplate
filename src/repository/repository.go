@@ -19,5 +19,5 @@ type DatabaseRepo interface {
 }
 
 type UserDBRepo interface {
-	CreateAUser(user models.User) (int, error)
+	CreateAUser(ctx context.Context, tx *sql.Tx, user models.User) (int, error)
 }

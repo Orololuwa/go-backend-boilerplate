@@ -83,7 +83,7 @@ func (m *testDBRepo) GetRoomById(ctx context.Context, tx *sql.Tx, id int) (model
 }
 
 // User
-func (m *testUserDBRepo) CreateAUser(user models.User) (int, error){
+func (m *testUserDBRepo) CreateAUser(ctx context.Context, tx *sql.Tx, user models.User) (int, error){
 	var newId int
 
 
