@@ -114,11 +114,11 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roomId, err := strconv.Atoi(body.RoomId)
-	if err != nil {
-		helpers.ClientError(w, err, http.StatusInternalServerError, "")
-		return
-	}
+	// roomId, err := strconv.Atoi(body.RoomId)
+	// if err != nil {
+	// 	helpers.ClientError(w, err, http.StatusInternalServerError, "")
+	// 	return
+	// }
 
 	reservation := models.Reservation {
 		FirstName: body.FirstName,
@@ -127,7 +127,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		Phone: body.Phone,
 		StartDate: startDate,
 		EndDate: endDate,
-		RoomID: roomId,
+		RoomID: body.RoomId,
 	}
 
 	ctx := context.Background()
@@ -141,7 +141,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		restriction := models.RoomRestriction{
 			StartDate: startDate,
 			EndDate: endDate,
-			RoomID: roomId,
+			RoomID: body.RoomId,
 			ReservationID: newReservationId,
 			RestrictionID: 1,
 		}

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/dtos"
+	"github.com/go-faker/faker/v4"
 )
 
 type postData struct {
@@ -55,25 +56,24 @@ func TestHandler(t *testing.T){
 }
 
 func TestRepository_PostReservation(t *testing.T){
-	// test if I try to call a method other than POST
-	reqBody := []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe@go.lang",
-		"phone": "+234-000-000-0000",
-		"startDate": "2024-03-30",
-		"endDate": "2024-04-30",
-		"roomId": "1"
-	}
-	`)
-	req, _ := http.NewRequest("PUT", "/reservation", bytes.NewBuffer([]byte(reqBody)))
-	req.Header.Set("Content-Type", "application/json")
+	body := dtos.ReservationBody{}
+	err := faker.FakeData(&body)
+    if err != nil {
+        t.Log(err)
+    }
 
+    jsonBody, err := json.Marshal(body)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
+
+	// test if I try to call a method other than POST
+	req, _ := http.NewRequest("PUT", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
+	req.Header.Set("Content-Type", "application/json")
 	rr := httptest.NewRecorder()
 
 	handler := http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusMethodNotAllowed {
@@ -81,13 +81,11 @@ func TestRepository_PostReservation(t *testing.T){
 	}
 
 	// test for the right request body
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer(reqBody))
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusCreated {
@@ -98,11 +96,9 @@ func TestRepository_PostReservation(t *testing.T){
 	// test for missing body
 	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(``)))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -110,25 +106,18 @@ func TestRepository_PostReservation(t *testing.T){
 	}
 
 	// test for validator for invalid email
-	reqBody = []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe",
-		"phone": "+234-000-000-0000",
-		"startDate": "invalid",
-		"endDate": "2024-04-30",
-		"roomId": "1"
-	}
-	`)
+	body.Email = "invalid"
+	jsonBody, err = json.Marshal(body)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
 
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusBadRequest {
@@ -136,25 +125,23 @@ func TestRepository_PostReservation(t *testing.T){
 	}
 
 	// test for invalid start date
-	reqBody = []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe@go.lang",
-		"phone": "+234-000-000-0000",
-		"startDate": "invalid",
-		"endDate": "2024-04-30",
-		"roomId": "1"
-	}
-	`)
+	err = faker.FakeData(&body)
+    if err != nil {
+        t.Log(err)
+    }
+	body.StartDate = "invalid"
 
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
+    jsonBody, err = json.Marshal(body)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
+
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -162,25 +149,23 @@ func TestRepository_PostReservation(t *testing.T){
 	}
 
 	// test for invalid end date
-	reqBody = []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe@go.lang",
-		"phone": "+234-000-000-0000",
-		"startDate": "2024-04-30",
-		"endDate": "invalid",
-		"roomId": "1"
-	}
-	`)
+	err = faker.FakeData(&body)
+    if err != nil {
+        t.Log(err)
+    }
+	body.EndDate = "invalid"
 
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
+    jsonBody, err = json.Marshal(body)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
+
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -188,51 +173,47 @@ func TestRepository_PostReservation(t *testing.T){
 	}
 
 	// test for invalid roomId
-	reqBody = []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe@go.lang",
-		"phone": "+234-000-000-0000",
-		"startDate": "2024-04-30",
-		"endDate": "2024-04-30",
-		"roomId": "one"
-	}
-	`)
+	// err = faker.FakeData(&body)
+    // if err != nil {
+    //     t.Log(err)
+    // }
+	// body.RoomId = 0
 
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
-	req.Header.Set("Content-Type", "application/json")
+    // jsonBody, err = json.Marshal(body)
+    // if err != nil {
+    //     t.Log("Error:", err)
+    //     return
+    // }
 
-	rr = httptest.NewRecorder()
+	// req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
+	// req.Header.Set("Content-Type", "application/json")
+	// rr = httptest.NewRecorder()
 
-	handler = http.HandlerFunc(Repo.PostReservation)
+	// handler = http.HandlerFunc(Repo.PostReservation)
+	// handler.ServeHTTP(rr, req)
 
-	handler.ServeHTTP(rr, req)
-
-	if rr.Code != http.StatusInternalServerError {
-		t.Errorf("PostReservation handler returned wrong response code for invalid roomId: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
-	}
+	// if rr.Code != http.StatusInternalServerError {
+	// 	t.Errorf("PostReservation handler returned wrong response code for invalid roomId: got %d, wanted %d", rr.Code, http.StatusInternalServerError)
+	// }
 
 	// test for failure to insert the reservation
-	reqBody = []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe@go.lang",
-		"phone": "+234-000-000-0000",
-		"startDate": "2024-04-30",
-		"endDate": "2024-04-30",
-		"roomId": "2"
-	}
-	`)
+	err = faker.FakeData(&body)
+    if err != nil {
+        t.Log(err)
+    }
+	body.RoomId = 2
 
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
+    jsonBody, err = json.Marshal(body)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
+
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -240,25 +221,23 @@ func TestRepository_PostReservation(t *testing.T){
 	}
 
 	// test for failure to insert room restriction
-	reqBody = []byte(`
-	{
-		"firstName": "John",
-		"lastName": "Doe",
-		"email": "johndoe@go.lang",
-		"phone": "+234-000-000-0000",
-		"startDate": "2024-04-30",
-		"endDate": "2024-04-30",
-		"roomId": "1000"
-	}
-	`)
+	err = faker.FakeData(&body)
+    if err != nil {
+        t.Log(err)
+    }
+	body.RoomId = 1000
 
-	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(reqBody)))
+    jsonBody, err = json.Marshal(body)
+    if err != nil {
+        t.Log("Error:", err)
+        return
+    }
+
+	req, _ = http.NewRequest("POST", "/reservation", bytes.NewBuffer([]byte(jsonBody)))
 	req.Header.Set("Content-Type", "application/json")
-
 	rr = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.PostReservation)
-
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
@@ -267,11 +246,12 @@ func TestRepository_PostReservation(t *testing.T){
 }
 
 func TestRepository_SearchAvailability(t *testing.T){
-	// Test to make sure that a post handler is being called
 	reqBody := dtos.PostAvailabilityBody{
-		StartDate: "2024-05-30",
-		EndDate: "2024-06-06",
 	}
+	err := faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
 	
 	jsonData, err := json.Marshal(reqBody)
     if err != nil {
@@ -279,14 +259,13 @@ func TestRepository_SearchAvailability(t *testing.T){
         return
     }
 
+	// Test to make sure that a post handler is being called
 	req, _ := http.NewRequest("PUT", "/search-availability", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res := httptest.NewRecorder()
 
 	reqBodyRef := &dtos.PostAvailabilityBody{}
 	handlerChain := mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusMethodNotAllowed {
@@ -294,25 +273,12 @@ func TestRepository_SearchAvailability(t *testing.T){
 	}
 
 	// test for the right request body
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "2024-05-30",
-		EndDate: "2024-06-06",
-	}
-	
-	jsonData, err = json.Marshal(reqBody)
-    if err != nil {
-        t.Log("Error:", err)
-        return
-    }
-
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusFound {
@@ -322,12 +288,10 @@ func TestRepository_SearchAvailability(t *testing.T){
 	// test for missing request body
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer([]byte(``)))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -337,11 +301,9 @@ func TestRepository_SearchAvailability(t *testing.T){
 	// test for missing request body in context
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer([]byte(``)))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	handlerChain = http.HandlerFunc(Repo.SearchAvailability)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -349,25 +311,19 @@ func TestRepository_SearchAvailability(t *testing.T){
 	}
 
 	// test for invalid startDate
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "invalid",
-		EndDate: "2024-06-06",
-	}
-	
+	reqBody.StartDate = "invalid"	
 	jsonData, err = json.Marshal(reqBody)
-
 	if err != nil {
 		t.Log("Error:", err)
 		return
 	}
+
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -375,25 +331,23 @@ func TestRepository_SearchAvailability(t *testing.T){
 	}
 
 	// test for invalid endDate
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "2024-05-30",
-		EndDate: "invalid",
-	}
-	
+	err = faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
+	reqBody.EndDate = "invalid"	
 	jsonData, err = json.Marshal(reqBody)
-
 	if err != nil {
 		t.Log("Error:", err)
 		return
 	}
+
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -401,25 +355,23 @@ func TestRepository_SearchAvailability(t *testing.T){
 	}	
 	
 	// test for failed db search
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "1955-05-30",
-		EndDate: "2024-06-06",
-	}
-	
+	err = faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
+	reqBody.StartDate = "1955-05-30"		
 	jsonData, err = json.Marshal(reqBody)
-
 	if err != nil {
 		t.Log("Error:", err)
 		return
 	}
+
 	req, _ = http.NewRequest("POST", "/search-availability", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	reqBodyRef = &dtos.PostAvailabilityBody{}
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailability), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -429,9 +381,11 @@ func TestRepository_SearchAvailability(t *testing.T){
 
 func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	reqBody := dtos.PostAvailabilityBody{
-		StartDate: "2024-05-30",
-		EndDate: "2024-06-06",
 	}
+	err := faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
 	
 	jsonData, err := json.Marshal(reqBody)
     if err != nil {
@@ -442,11 +396,9 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	// Test to make sure that a post handler is being called
 	req, _ := http.NewRequest("PUT", "/search-availability/1", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res := httptest.NewRecorder()
 
 	handler := mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusMethodNotAllowed {
@@ -457,11 +409,9 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	req, _ = http.NewRequest("POST", "/search-availability/one", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/one"
-
 	res = httptest.NewRecorder()
 
 	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusInternalServerError {
@@ -472,11 +422,9 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/1"
-
 	res = httptest.NewRecorder()
 
 	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusFound {
@@ -487,11 +435,9 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer([]byte(``)))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/1"
-
 	res = httptest.NewRecorder()
 
 	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -502,11 +448,9 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer([]byte(``)))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/1"
-
 	res = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.SearchAvailabilityByRoomId)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -514,25 +458,23 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	}
 
 	// test for invalid startDate
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "invalid",
-		EndDate: "2024-06-06",
-	}
-	
+	err = faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
+	reqBody.StartDate = "invalid"
 	jsonData, err = json.Marshal(reqBody)
-
 	if err != nil {
 		t.Log("Error:", err)
 		return
 	}
+
 	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/1"
-
 	res = httptest.NewRecorder()
 
 	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -540,25 +482,23 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	}
 
 	// test for invalid endDate
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "2024-05-30",
-		EndDate: "invalid",
-	}
-	
+	err = faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
+	reqBody.EndDate = "invalid"
 	jsonData, err = json.Marshal(reqBody)
-
 	if err != nil {
 		t.Log("Error:", err)
 		return
 	}
+
 	req, _ = http.NewRequest("POST", "/search-availability/1", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/1"
-
 	res = httptest.NewRecorder()
 
 	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -566,11 +506,10 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	}
 
 	// test for failed db search
-	reqBody = dtos.PostAvailabilityBody{
-		StartDate: "2024-05-30",
-		EndDate: "2024-06-06",
-	}
-	
+	err = faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }	
 	jsonData, err = json.Marshal(reqBody)
     if err != nil {
         t.Log("Error:", err)
@@ -580,11 +519,9 @@ func TestRepository_SearchAvailabilityByRoomId(t *testing.T){
 	req, _ = http.NewRequest("POST", "/search-availability/2", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/search-availability/2"
-
 	res = httptest.NewRecorder()
 
 	handler = mdTest.ValidateReqBody(http.HandlerFunc(Repo.SearchAvailabilityByRoomId), &dtos.PostAvailabilityBody{})
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -596,11 +533,9 @@ func TestRepository_GetAllRooms(t *testing.T) {
 	// test OK
 	req, _ := http.NewRequest("GET", "/room", nil)
 	req.Header.Set("Content-Type", "application/json")
-
 	res := httptest.NewRecorder()
 
 	handler := http.HandlerFunc(Repo.GetAllRooms)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -613,11 +548,9 @@ func TestRepository_GetAllRooms(t *testing.T) {
 	params := url.Values{}
     params.Add("id", "one")
     req.URL.RawQuery = params.Encode()
-
 	res = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.GetAllRooms)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -630,11 +563,9 @@ func TestRepository_GetAllRooms(t *testing.T) {
 	params = url.Values{}
     params.Add("id", "2")
     req.URL.RawQuery = params.Encode()
-
 	res = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.GetAllRooms)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -647,11 +578,9 @@ func TestRepository_GetARoomById(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/room/1", nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/room/1"
-
 	res := httptest.NewRecorder()
 
 	handler := http.HandlerFunc(Repo.GetRoomById)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -662,11 +591,9 @@ func TestRepository_GetARoomById(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/room", nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.RequestURI = "/room/one"
-
 	res = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.GetRoomById)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusInternalServerError {
@@ -677,12 +604,9 @@ func TestRepository_GetARoomById(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/room", nil)
 	req.Header.Set("Content-Type", "application/json")	
 	req.RequestURI = "/room/1000"
-
-
 	res = httptest.NewRecorder()
 
 	handler = http.HandlerFunc(Repo.GetRoomById)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -691,10 +615,11 @@ func TestRepository_GetARoomById(t *testing.T) {
 }
 
 func TestLoginHandler(t *testing.T){
-	reqBody := dtos.UserLoginBody{
-		Email: "johndoe@gmail.com",
-	}
-	
+	reqBody := dtos.UserLoginBody{}
+	err := faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }	
 	jsonData, err := json.Marshal(reqBody)
     if err != nil {
         t.Log("Error:", err)
@@ -704,12 +629,10 @@ func TestLoginHandler(t *testing.T){
 	// Test for missing request body
 	req, _ := http.NewRequest("POST", "/login", bytes.NewBuffer([]byte(``)))
 	req.Header.Set("Content-Type", "application/json")
-
 	res := httptest.NewRecorder()
 
 	reqBodyRef := &dtos.UserLoginBody{}
 	handler := http.HandlerFunc(Repo.LoginUser)
-
 	handler.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -719,11 +642,9 @@ func TestLoginHandler(t *testing.T){
 	// Test for success
 	req, _ = http.NewRequest("POST", "/login", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
-
 	res = httptest.NewRecorder()
 
 	handlerChain := mdTest.ValidateReqBody(http.HandlerFunc(Repo.LoginUser), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {

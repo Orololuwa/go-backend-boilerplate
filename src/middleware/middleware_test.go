@@ -9,10 +9,11 @@ import (
 	"testing"
 
 	"github.com/Orololuwa/go-backend-boilerplate/src/helpers"
+	"github.com/go-faker/faker/v4"
 )
 
 type validationMiddleWareBody struct {
-	Email string `json:"email" validate:"required,email"`
+	Email string `json:"email" validate:"required,email" faker:"email"`
 }
 
 func middlewareHandler(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +28,6 @@ func TestValidationMiddleware(t *testing.T){
 
 	reqBodyRef := &validationMiddleWareBody{}
 	handlerChain := mdTest.ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -35,10 +35,7 @@ func TestValidationMiddleware(t *testing.T){
 	}
 
 	// test for invalid email
-	reqBody := validationMiddleWareBody{
-		Email: "johndoe",
-	}
-
+	reqBody := validationMiddleWareBody{ Email: "johnDoe"}
 	jsonData, err := json.Marshal(reqBody)
     if err != nil {
         t.Log("Error:", err)
@@ -50,7 +47,6 @@ func TestValidationMiddleware(t *testing.T){
 	res = httptest.NewRecorder()
 
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusBadRequest {
@@ -58,10 +54,10 @@ func TestValidationMiddleware(t *testing.T){
 	}
 
 	// test for valid email
-	reqBody = validationMiddleWareBody{
-		Email: "johnDoe@gmail.com",
-	}
-
+	err = faker.FakeData(&reqBody)
+    if err != nil {
+        t.Log(err)
+    }
 	jsonData, err = json.Marshal(reqBody)
     if err != nil {
         t.Log("Error:", err)
@@ -72,7 +68,6 @@ func TestValidationMiddleware(t *testing.T){
 	res = httptest.NewRecorder()
 
 	handlerChain = mdTest.ValidateReqBody(http.HandlerFunc(middlewareHandler), reqBodyRef)
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
@@ -87,7 +82,6 @@ func TestAuthorizationMiddleware(t *testing.T){
 	res := httptest.NewRecorder()
 
 	handlerChain := mdTest.Authorization(http.HandlerFunc(middlewareHandler))
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusUnauthorized {
@@ -103,11 +97,9 @@ func TestAuthorizationMiddleware(t *testing.T){
 	req = httptest.NewRequest("POST", "/route", nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", "invalid tokenString"))
-
 	res = httptest.NewRecorder()
 
 	handlerChain = mdTest.Authorization(http.HandlerFunc(middlewareHandler))
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusUnauthorized {
@@ -123,11 +115,9 @@ func TestAuthorizationMiddleware(t *testing.T){
 	req = httptest.NewRequest("POST", "/route", nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
-
 	res = httptest.NewRecorder()
 
 	handlerChain = mdTest.Authorization(http.HandlerFunc(middlewareHandler))
-
 	handlerChain.ServeHTTP(res, req)
 
 	if res.Code != http.StatusOK {
